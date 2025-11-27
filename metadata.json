@@ -1,0 +1,7 @@
+{
+  "name": "Copy of White Lotus WMS",
+  "description": "A secure, free-to-build Workforce Management System with QR-based login and local data persistence.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

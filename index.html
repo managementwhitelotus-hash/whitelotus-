@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <title>White Lotus WMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: '#fce4ec',
+                100: '#f8bbd0',
+                200: '#f48fb1',
+                300: '#f06292',
+                400: '#ec407a',
+                500: '#e91e63', // Main Brand Color from Logo
+                600: '#d81b60',
+                700: '#c2185b',
+                800: '#ad1457',
+                900: '#880e4f',
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+      body {
+        font-family: 'Outfit', sans-serif;
+        background-color: #fdf2f8;
+        overflow-x: hidden;
+      }
+      .watermark {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 70vmin;
+        height: 70vmin;
+        opacity: 0.04;
+        pointer-events: none;
+        z-index: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 80' fill='none' stroke='%23e91e63' stroke-width='1.5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 70 C50 70 30 60 20 40 C20 25 35 25 35 25 C35 25 40 40 50 50 C60 40 65 25 65 25 C65 25 80 25 80 40 C70 60 50 70 50 70 Z' /%3E%3Cpath d='M50 50 C50 50 45 25 50 5 C55 25 50 50 50 50 Z' /%3E%3Cpath d='M35 25 C35 25 25 15 25 5 C35 15 35 25 35 25 Z' /%3E%3Cpath d='M65 25 C65 25 75 15 75 5 C65 15 65 25 65 25 Z' /%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.6",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+    "recharts": "https://aistudiocdn.com/recharts@^3.5.0",
+    "react-qr-code": "https://aistudiocdn.com/react-qr-code@^2.0.18"
+  }
+}
+</script>
+</head>
+  <body>
+    <div class="watermark"></div>
+    <div id="root" style="position: relative; z-index: 1;"></div>
+  </body>
+</html>
