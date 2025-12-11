@@ -14,7 +14,8 @@
     "react-router-dom": "^7.9.6",
     "lucide-react": "^0.555.0",
     "recharts": "^3.5.0",
-    "react-qr-code": "^2.0.18"
+    "react-qr-code": "^2.0.18",
+    "@google/genai": "latest"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

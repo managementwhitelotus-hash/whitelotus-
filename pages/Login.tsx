@@ -1,41 +1,57 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, ScanLine, Camera, LogIn, AlertCircle } from 'lucide-react';
+import { Lock, ScanLine, Camera, LogIn, AlertCircle, User } from 'lucide-react';
 import { sha256 } from '../services/cryptoService';
-import { validateWorkerQR, getWorkers } from '../services/dbService';
-import { MOCK_ADMIN_PASSWORD_HASH } from '../types';
+import { validateWorkerQR, getSettings } from '../services/dbService';
+import { DEFAULT_PASSWORD_HASH } from '../types';
 
 const LotusIcon = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 100 80" className={className} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M50 70 C50 70 30 60 20 40 C20 25 35 25 35 25 C35 25 40 40 50 50 C60 40 65 25 65 25 C65 25 80 25 80 40 C70 60 50 70 50 70 Z" />
-    <path d="M50 50 C50 50 45 25 50 5 C55 25 50 50 50 50 Z" />
-    <path d="M35 25 C35 25 25 15 25 5 C35 15 35 25 35 25 Z" />
-    <path d="M65 25 C65 25 75 15 75 5 C65 15 65 25 65 25 Z" />
+  <svg viewBox="0 0 100 100" className={className} fill="currentColor" stroke="none">
+    <path d="M50 20 C50 20 60 40 60 55 C60 70 50 80 50 80 C50 80 40 70 40 55 C40 40 50 20 50 20 Z" />
+    <path d="M50 80 C50 80 35 70 30 50 C30 40 35 30 35 30 C35 30 40 50 50 80 Z" />
+    <path d="M50 80 C50 80 65 70 70 50 C70 40 65 30 65 30 C65 30 60 50 50 80 Z" />
+    <path d="M35 30 C35 30 20 35 15 50 C15 60 25 70 30 70 C30 70 25 50 35 30 Z" />
+    <path d="M65 30 C65 30 80 35 85 50 C85 60 75 70 70 70 C70 70 75 50 65 30 Z" />
   </svg>
 );
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<'WORKER' | 'ADMIN'>('WORKER');
+  
+  // Admin Form
+  const [adminUser, setAdminUser] = useState('');
   const [adminPass, setAdminPass] = useState('');
   const [error, setError] = useState('');
   
+  // Settings for branding & auth
+  const [orgName, setOrgName] = useState('White Lotus');
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
+  const [storedAdminHash, setStoredAdminHash] = useState(DEFAULT_PASSWORD_HASH);
+  const [storedAdminUser, setStoredAdminUser] = useState('admin');
+
   // Worker Logic
   const [qrInput, setQrInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [cameraError, setCameraError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  useEffect(() => {
+    const settings = getSettings();
+    setOrgName(settings.organizationName);
+    setLogoUrl(settings.logoUrl);
+    setStoredAdminHash(settings.adminPasswordHash || DEFAULT_PASSWORD_HASH);
+    setStoredAdminUser(settings.adminUsername || 'admin');
+  }, []);
+
   // Robust Camera Handling
   useEffect(() => {
     let stream: MediaStream | null = null;
     
     if (mode === 'WORKER') {
-        setCameraError(false); // Reset error state on mount/mode switch
-        
+        setCameraError(false);
         const startCamera = async () => {
             try {
-                // Try facing mode environment (rear camera), fallback if needed
                 stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: "environment" } 
                 });
@@ -61,10 +77,11 @@ export const Login: React.FC = () => {
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const hash = await sha256(adminPass);
-    if (hash === MOCK_ADMIN_PASSWORD_HASH) {
+    
+    if (adminUser.toLowerCase() === storedAdminUser.toLowerCase() && hash === storedAdminHash) {
         navigate('/admin/dashboard');
     } else {
-        setError('Invalid credentials');
+        setError('Invalid username or password');
     }
   };
 
@@ -72,7 +89,6 @@ export const Login: React.FC = () => {
     setIsProcessing(true);
     setError('');
     
-    // Simulate network delay
     setTimeout(async () => {
         const worker = await validateWorkerQR(qrInput);
         if (worker) {
@@ -84,9 +100,6 @@ export const Login: React.FC = () => {
     }, 800);
   };
 
-  const [workers] = useState(getWorkers());
-  const fillDemoWorker = (token: string) => setQrInput(token);
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-brand-50/30">
       
@@ -96,11 +109,16 @@ export const Login: React.FC = () => {
 
       <div className="bg-white/95 backdrop-blur-xl w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-white/60 relative z-10">
         <div className="p-8 pb-6 text-center">
-            <div className="w-20 h-20 bg-brand-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-100 shadow-inner">
-                <LotusIcon className="w-10 h-10 text-brand-600" />
+            {/* LOGO CONTAINER */}
+            <div className="w-24 h-24 bg-brand-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-100 shadow-inner overflow-hidden relative">
+                {logoUrl ? (
+                    <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                ) : (
+                    <LotusIcon className="w-14 h-14 text-brand-500" />
+                )}
             </div>
-            <h1 className="text-3xl font-bold text-slate-800 tracking-tight uppercase">White Lotus</h1>
-            <p className="text-brand-500 text-xs font-bold tracking-[0.2em] mt-2">CREATIVE STUDIO</p>
+            <h1 className="text-3xl font-bold text-slate-800 tracking-tight uppercase truncate px-2">{orgName}</h1>
+            <p className="text-brand-500 text-xs font-bold tracking-[0.2em] mt-2">WORKFORCE SYSTEM</p>
         </div>
 
         <div className="px-8">
@@ -168,42 +186,41 @@ export const Login: React.FC = () => {
                                 <LogIn size={20} />
                             </button>
                         </div>
-                        
-                        {workers.length > 0 && (
-                            <div className="mt-6 p-4 bg-brand-50/40 border border-brand-100 rounded-2xl text-xs text-brand-800">
-                                <strong className="block mb-2 text-brand-700 uppercase tracking-wide">Demo: Tap a worker to test</strong>
-                                <div className="flex flex-wrap gap-2">
-                                    {workers.map(w => (
-                                        <button 
-                                            key={w.id} 
-                                            onClick={() => fillDemoWorker(w.qr_token)}
-                                            className="px-3 py-1.5 bg-white border border-brand-200 rounded-lg hover:bg-brand-500 hover:text-white hover:border-brand-500 transition-all text-brand-700 shadow-sm"
-                                        >
-                                            {w.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </div>
             ) : (
-                <form onSubmit={handleAdminLogin} className="space-y-6">
+                <form onSubmit={handleAdminLogin} className="space-y-4">
+                     <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Username</label>
+                        <div className="relative">
+                            <User className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
+                            <input 
+                                type="text" 
+                                required
+                                value={adminUser}
+                                onChange={(e) => setAdminUser(e.target.value)}
+                                className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
+                                placeholder="e.g. admin"
+                            />
+                        </div>
+                    </div>
                     <div>
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Admin Password</label>
-                        <input 
-                            type="password" 
-                            required
-                            value={adminPass}
-                            onChange={(e) => setAdminPass(e.target.value)}
-                            className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
-                            placeholder="••••••••"
-                        />
-                        <p className="text-xs text-slate-400 mt-2">Default: <strong>password</strong></p>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Password</label>
+                        <div className="relative">
+                            <Lock className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
+                            <input 
+                                type="password" 
+                                required
+                                value={adminPass}
+                                onChange={(e) => setAdminPass(e.target.value)}
+                                className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all"
+                                placeholder="••••••••"
+                            />
+                        </div>
                     </div>
                     <button 
                         type="submit"
-                        className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-brand-600/30 transform hover:-translate-y-1 active:translate-y-0"
+                        className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-brand-600/30 transform hover:-translate-y-1 active:translate-y-0 mt-4"
                     >
                         Access Dashboard
                     </button>
@@ -220,7 +237,7 @@ export const Login: React.FC = () => {
       </div>
       
       <div className="fixed bottom-4 text-center w-full text-xs text-brand-800/40 font-medium">
-         White Lotus System • Secure & Encrypted
+         {orgName} System • Secure & Encrypted
       </div>
     </div>
   );

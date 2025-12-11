@@ -4,10 +4,8 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Workers } from './pages/Workers';
 import { Attendance } from './pages/Attendance';
-import { Tasks } from './pages/Tasks';
 import { Settings } from './pages/Settings';
 import { WorkerPanel } from './pages/WorkerPanel';
-import { AiAssistant } from './pages/AiAssistant';
 import { Layout } from './components/Layout';
 
 const ProtectedAdminRoute: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
@@ -25,8 +23,6 @@ const App: React.FC = () => {
         {/* Admin Routes */}
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/dashboard" element={<ProtectedAdminRoute><Dashboard /></ProtectedAdminRoute>} />
-        <Route path="/admin/assistant" element={<ProtectedAdminRoute><AiAssistant /></ProtectedAdminRoute>} />
-        <Route path="/admin/tasks" element={<ProtectedAdminRoute><Tasks /></ProtectedAdminRoute>} />
         <Route path="/admin/workers" element={<ProtectedAdminRoute><Workers /></ProtectedAdminRoute>} />
         <Route path="/admin/attendance" element={<ProtectedAdminRoute><Attendance /></ProtectedAdminRoute>} />
         <Route path="/admin/settings" element={<ProtectedAdminRoute><Settings /></ProtectedAdminRoute>} />

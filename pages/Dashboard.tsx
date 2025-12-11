@@ -8,8 +8,9 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from 'recharts';
-import { Users, UserCheck, UserX, Clock } from 'lucide-react';
+import { Users, UserCheck, UserX, Clock, Sparkles, RefreshCw } from 'lucide-react';
 import { getWorkers, getAttendance } from '../services/dbService';
+import { generateDailyBriefing } from '../services/aiService';
 import { AttendanceStatus } from '../types';
 
 export const Dashboard: React.FC = () => {
@@ -20,6 +21,8 @@ export const Dashboard: React.FC = () => {
     lateArrivals: 0,
   });
   const [chartData, setChartData] = useState<any[]>([]);
+  const [aiBriefing, setAiBriefing] = useState<string>("");
+  const [loadingBriefing, setLoadingBriefing] = useState(false);
 
   useEffect(() => {
     const workers = getWorkers();
@@ -53,7 +56,19 @@ export const Dashboard: React.FC = () => {
     });
 
     setChartData(data);
+    
+    // Load initial briefing if stats exist
+    if (workers.length > 0) {
+        handleGenerateBriefing();
+    }
   }, []);
+
+  const handleGenerateBriefing = async () => {
+    setLoadingBriefing(true);
+    const briefing = await generateDailyBriefing();
+    setAiBriefing(briefing);
+    setLoadingBriefing(false);
+  };
 
   const StatCard = ({ title, value, icon: Icon, colorClass, iconColor }: any) => (
     <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group">
@@ -77,6 +92,30 @@ export const Dashboard: React.FC = () => {
         <span className="self-start md:self-auto text-xs font-mono text-brand-500 bg-brand-50 px-4 py-1.5 rounded-full border border-brand-100">
             {new Date().toLocaleTimeString()}
         </span>
+      </div>
+      
+      {/* AI Insights Widget */}
+      <div className="bg-gradient-to-r from-brand-600 to-brand-500 rounded-2xl p-6 md:p-8 text-white shadow-xl shadow-brand-500/20 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+        <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                    <Sparkles size={20} className="text-white" />
+                </div>
+                <h3 className="font-bold text-lg tracking-wide">AI Daily Insight</h3>
+                <button 
+                    onClick={handleGenerateBriefing} 
+                    disabled={loadingBriefing}
+                    className="ml-auto p-2 hover:bg-white/10 rounded-full transition-colors disabled:opacity-50"
+                >
+                    <RefreshCw size={16} className={loadingBriefing ? 'animate-spin' : ''} />
+                </button>
+            </div>
+            
+            <p className="text-brand-50 leading-relaxed text-sm md:text-base max-w-3xl">
+                {aiBriefing || "Generating workforce analysis..."}
+            </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">

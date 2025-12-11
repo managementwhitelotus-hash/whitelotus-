@@ -32,9 +32,24 @@ export interface AttendanceRecord {
   notes?: string;
 }
 
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  assignedTo: string; // worker_id
+  assignedName: string;
+  dueDate: string;
+  status: 'PENDING' | 'COMPLETED';
+  createdAt: string;
+}
+
 export interface SystemSettings {
   storageType: 'DATABASE' | 'EXCEL';
   organizationName: string;
+  logoUrl?: string; // Base64 string of uploaded logo
+  adminUsername?: string;
+  adminPasswordHash?: string; // Stored hash
 }
 
-export const MOCK_ADMIN_PASSWORD_HASH = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"; // "password"
+// Default hash for 'password'
+export const DEFAULT_PASSWORD_HASH = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8";

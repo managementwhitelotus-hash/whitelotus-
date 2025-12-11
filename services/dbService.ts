@@ -1,9 +1,10 @@
-import { Worker, AttendanceRecord, SystemSettings, WorkerStatus, AttendanceStatus } from '../types';
+import { Worker, AttendanceRecord, SystemSettings, WorkerStatus, AttendanceStatus, Task, DEFAULT_PASSWORD_HASH } from '../types';
 import { sha256, generateSecureToken } from './cryptoService';
 
 const WORKERS_KEY = 'wl_workers';
 const ATTENDANCE_KEY = 'wl_attendance';
 const SETTINGS_KEY = 'wl_settings';
+const TASKS_KEY = 'wl_tasks';
 
 // Initialize DB if empty
 const initDB = () => {
@@ -13,16 +14,54 @@ const initDB = () => {
   if (!localStorage.getItem(ATTENDANCE_KEY)) {
     localStorage.setItem(ATTENDANCE_KEY, JSON.stringify([]));
   }
+  if (!localStorage.getItem(TASKS_KEY)) {
+    localStorage.setItem(TASKS_KEY, JSON.stringify([]));
+  }
   if (!localStorage.getItem(SETTINGS_KEY)) {
     const defaultSettings: SystemSettings = {
       storageType: 'DATABASE',
-      organizationName: 'White Lotus Corp',
+      organizationName: 'White Lotus',
+      adminUsername: 'admin',
+      adminPasswordHash: DEFAULT_PASSWORD_HASH
     };
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(defaultSettings));
   }
 };
 
 initDB();
+
+// --- SEED DATA FOR DEMO ---
+export const seedDatabase = async () => {
+    // Clear existing
+    localStorage.removeItem(WORKERS_KEY);
+    localStorage.removeItem(ATTENDANCE_KEY);
+    localStorage.removeItem(TASKS_KEY);
+    initDB();
+
+    // Create Workers
+    const w1 = await addWorker("Tanya McQuoid", "General Manager");
+    const w2 = await addWorker("Portia", "Assistant");
+    const w3 = await addWorker("Armond", "Hospitality Lead");
+
+    // Create Attendance for last 3 days
+    const today = new Date();
+    const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+    const dayBefore = new Date(today); dayBefore.setDate(dayBefore.getDate() - 2);
+
+    // Today
+    createManualRecord(w1.id, today.toISOString().split('T')[0], AttendanceStatus.PRESENT, "09:00", "", "Early arrival");
+    createManualRecord(w2.id, today.toISOString().split('T')[0], AttendanceStatus.ABSENT, "", "", "Sick leave");
+    
+    // Yesterday
+    createManualRecord(w1.id, yesterday.toISOString().split('T')[0], AttendanceStatus.PRESENT, "09:15", "17:00", "");
+    createManualRecord(w3.id, yesterday.toISOString().split('T')[0], AttendanceStatus.PRESENT, "08:00", "16:00", "");
+
+    // Tasks
+    addTask("Prepare VIP Welcome Kit", "For the incoming guests in Suite 1", w2.id, today.toISOString().split('T')[0]);
+    addTask("Inventory Check", "Bar and Lounge area", w3.id, today.toISOString().split('T')[0]);
+    
+    return true;
+};
 
 export const getWorkers = (): Worker[] => {
   const data = localStorage.getItem(WORKERS_KEY);
@@ -38,11 +77,11 @@ export const addWorker = async (name: string, role: string): Promise<Worker> => 
     id: crypto.randomUUID(),
     name,
     role,
-    qr_token: rawToken, // In a real system, do NOT store this plain text after generation. Only give to user once.
+    qr_token: rawToken, 
     qr_hash: tokenHash,
     status: WorkerStatus.ACTIVE,
     created_at: new Date().toISOString(),
-    avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+    avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff`,
   };
 
   workers.push(newWorker);
@@ -126,13 +165,19 @@ export const createManualRecord = (
 
 export const validateWorkerQR = async (qrToken: string): Promise<Worker | null> => {
   const workers = getWorkers();
-  // We hash the incoming token and compare it to the stored hash
   const inputHash = await sha256(qrToken);
   return workers.find(w => w.qr_hash === inputHash) || null;
 };
 
 export const getSettings = (): SystemSettings => {
-  return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+  const defaults: SystemSettings = {
+      storageType: 'DATABASE',
+      organizationName: 'White Lotus',
+      adminUsername: 'admin',
+      adminPasswordHash: DEFAULT_PASSWORD_HASH
+  };
+  const stored = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+  return { ...defaults, ...stored };
 };
 
 export const updateSettings = (settings: SystemSettings) => {
@@ -156,4 +201,47 @@ export const exportDataToCSV = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+};
+
+// --- Task Management ---
+
+export const getTasks = (): Task[] => {
+  const data = localStorage.getItem(TASKS_KEY);
+  return data ? JSON.parse(data) : [];
+};
+
+export const addTask = (title: string, description: string, assignedTo: string, dueDate: string): Task => {
+  const tasks = getTasks();
+  const workers = getWorkers();
+  const worker = workers.find(w => w.id === assignedTo);
+  
+  const newTask: Task = {
+    id: crypto.randomUUID(),
+    title,
+    description,
+    assignedTo,
+    assignedName: worker ? worker.name : 'Unknown',
+    dueDate,
+    status: 'PENDING',
+    createdAt: new Date().toISOString()
+  };
+
+  tasks.unshift(newTask);
+  localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+  return newTask;
+};
+
+export const updateTaskStatus = (taskId: string, status: 'PENDING' | 'COMPLETED') => {
+  const tasks = getTasks();
+  const index = tasks.findIndex(t => t.id === taskId);
+  if (index !== -1) {
+    tasks[index].status = status;
+    localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+  }
+};
+
+export const deleteTask = (taskId: string) => {
+  const tasks = getTasks();
+  const filtered = tasks.filter(t => t.id !== taskId);
+  localStorage.setItem(TASKS_KEY, JSON.stringify(filtered));
 };

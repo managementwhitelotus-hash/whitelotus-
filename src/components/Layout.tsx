@@ -3,7 +3,7 @@ import { Sidebar } from './Sidebar';
 import { Menu, X } from 'lucide-react';
 
 interface LayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
